@@ -1,26 +1,24 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>CodeLearn</title>
+  <title>CodeLearn Ultimate</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-  <h1>CodeLearn</h1>
-
+  <h1>CodeLearn Ultimate</h1>
   <a href="#">Join Discord</a>
 
   <h3 id="level"></h3>
-  <div id="lesson" class="card"></div>
+  <h4 id="chapter-name"></h4>
 
-  <!-- Optional media -->
-  <div id="media-container" class="card" style="display:none;"></div>
+  <div id="lesson" class="card"></div>
+  <div id="media-container" class="card"></div>
 
   <div id="progress"></div>
   <div id="xp-bar"><div id="xp-fill"></div></div>
   <div id="level-bar"><div id="level-fill"></div></div>
 
-  <!-- Live code editor -->
   <div id="live-editor" class="card">
     <h4>Try it yourself:</h4>
     <textarea id="code-input" placeholder="Type HTML/CSS/JS here..."></textarea>
@@ -28,7 +26,6 @@
     <iframe id="code-output"></iframe>
   </div>
 
-  <!-- Quiz -->
   <div id="quiz-container" class="card" style="display:none;">
     <p id="quiz-question"></p>
     <div id="quiz-options"></div>
@@ -36,18 +33,44 @@
     <p id="quiz-feedback"></p>
   </div>
 
-  <!-- Certificate -->
+  <div id="challenge-container" class="card" style="display:none;">
+    <h4>Mini Coding Challenge:</h4>
+    <textarea id="challenge-input" placeholder="Write your code here..."></textarea>
+    <button onclick="runChallenge()">Check Challenge</button>
+    <p id="challenge-feedback"></p>
+  </div>
+
+  <div id="badges" class="card">
+    <h4>Badges Earned:</h4>
+    <div id="badge-list"></div>
+  </div>
+
+  <div id="streak" class="card">
+    <h4>Daily Streak:</h4>
+    <p id="streak-count">0 days</p>
+  </div>
+
+  <div id="progress-summary" class="card">
+    <h4>Progress Summary:</h4>
+    <p id="summary-xp"></p>
+    <p id="summary-correct"></p>
+    <p id="summary-badges"></p>
+    <p id="summary-streak"></p>
+  </div>
+
   <div id="certificate" class="card" style="display:none;">
     <h2>🎉 Certificate of Completion 🎉</h2>
     <p>Congratulations! You completed all lessons.</p>
     <p id="final-xp"></p>
+    <p id="final-badges"></p>
+    <p id="final-streak"></p>
   </div>
 
   <button onclick="prevLesson()">← Prev</button>
   <button onclick="nextLesson()">Next →</button>
   <button onclick="resetProgress()">🔄 Reset Progress</button>
+  <button onclick="showSummary()">📊 Show Summary</button>
 
   <script src="script.js"></script>
-
 </body>
 </html>
