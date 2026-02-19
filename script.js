@@ -5,7 +5,7 @@ const lessons = [
     code: "<h1>Hello World</h1>",
     type: "html",
     xp: 10,
-    media: "<img src='https://via.placeholder.com/300x150.png?text=HTML+Example' alt='HTML Example'>",
+    media: "<div class='code-box code-html'>&lt;!DOCTYPE html&gt;\n&lt;h1&gt;Hello World&lt;/h1&gt;</div>",
     quiz: {
       question: "What does HTML stand for?",
       options: ["Hyper Text Markup Language", "High Text Make Language", "Hyperlink and Text", "Home Tool Markup"],
@@ -18,7 +18,7 @@ const lessons = [
     code: "p { color: red; }",
     type: "css",
     xp: 10,
-    media: "<img src='https://via.placeholder.com/300x150.png?text=CSS+Example' alt='CSS Example'>",
+    media: "<div class='code-box code-css'>p { color: red; font-size: 18px; }</div>",
     quiz: {
       question: "CSS is used for?",
       options: ["Structure", "Style", "Logic", "Database"],
@@ -31,7 +31,7 @@ const lessons = [
     code: "Combine HTML + CSS + JS",
     type: "html",
     xp: 20,
-    media: "<video width='300' controls><source src='https://www.w3schools.com/html/mov_bbb.mp4' type='video/mp4'></video>",
+    media: "<div class='code-box code-html'>&lt;!DOCTYPE html&gt;\n&lt;html&gt;\n&lt;head&gt;&lt;/head&gt;\n&lt;body&gt;&lt;h1&gt;My Website&lt;/h1&gt;&lt;/body&gt;\n&lt;/html&gt;</div>",
     quiz: {
       question: "Which three technologies build websites?",
       options: ["HTML, CSS, JS", "PHP, Python, JS", "HTML, PHP, CSS", "JS, CSS, SQL"],
@@ -44,7 +44,7 @@ const lessons = [
     code: "Forms, tables, semantic tags",
     type: "html",
     xp: 30,
-    media: "<img src='https://via.placeholder.com/300x150.png?text=Advanced+HTML' alt='Advanced HTML'>",
+    media: "<div class='code-box code-html'>&lt;form&gt;&lt;input type='text'/&gt;&lt;/form&gt;\n&lt;table&gt;&lt;tr&gt;&lt;td&gt;Cell&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</div>",
     quiz: {
       question: "What tag is semantic HTML?",
       options: ["<div>", "<section>", "<span>", "<b>"],
@@ -81,7 +81,6 @@ let selectedAnswer = null;
 
 function showLesson(){
   if(i>=lessons.length){
-    // Show certificate
     certificate.style.display = "block";
     lessonDiv.style.display = "none";
     mediaContainer.style.display = "none";
@@ -96,7 +95,6 @@ function showLesson(){
   const lesson = lessons[i];
   levelDiv.innerText = lesson.level;
   lessonDiv.innerHTML = `<p>${lesson.text}</p><div class="code-box code-${lesson.type}">${lesson.code}</div>`;
-
   progressDiv.innerText = `Lesson ${i+1} of ${lessons.length}`;
 
   if(lesson.media){
@@ -106,7 +104,6 @@ function showLesson(){
     mediaContainer.style.display = "none";
   }
 
-  // XP & level
   const xpPercent = Math.min((totalXP / 100) * 100, 100);
   xpFill.style.width = xpPercent + "%";
 
