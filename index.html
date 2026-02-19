@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>CodeLearn</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <h1>CodeLearn</h1>
+
+  <a href="#">Join Discord</a>
+
+  <h3 id="level"></h3>
+  <div id="lesson" class="card"></div>
+
+  <!-- Optional media -->
+  <div id="media-container" class="card" style="display:none;"></div>
+
+  <div id="progress"></div>
+  <div id="xp-bar"><div id="xp-fill"></div></div>
+  <div id="level-bar"><div id="level-fill"></div></div>
+
+  <!-- Live code editor -->
+  <div id="live-editor" class="card">
+    <h4>Try it yourself:</h4>
+    <textarea id="code-input" placeholder="Type HTML/CSS/JS here..."></textarea>
+    <button onclick="runCode()">Run Code</button>
+    <iframe id="code-output"></iframe>
+  </div>
+
+  <!-- Quiz -->
+  <div id="quiz-container" class="card" style="display:none;">
+    <p id="quiz-question"></p>
+    <div id="quiz-options"></div>
+    <button id="submit-answer">Submit Answer</button>
+    <p id="quiz-feedback"></p>
+  </div>
+
+  <!-- Certificate -->
+  <div id="certificate" class="card" style="display:none;">
+    <h2>🎉 Certificate of Completion 🎉</h2>
+    <p>Congratulations! You completed all lessons.</p>
+    <p id="final-xp"></p>
+  </div>
+
+  <button onclick="prevLesson()">← Prev</button>
+  <button onclick="nextLesson()">Next →</button>
+  <button onclick="resetProgress()">🔄 Reset Progress</button>
+
+  <script src="script.js"></script>
+
+</body>
+</html>
