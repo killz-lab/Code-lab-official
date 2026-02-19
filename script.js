@@ -1,230 +1,193 @@
 // ------------------------
-// Chapters + Lessons Setup
+// Helper: Escape HTML for code boxes
+// ------------------------
+function escapeHTML(str){
+  return str.replace(/&/g,'&amp;')
+            .replace(/</g,'&lt;')
+            .replace(/>/g,'&gt;');
+}
+
+// ------------------------
+// Chapters & Lessons
 // ------------------------
 const chapters=[];
 for(let c=1;c<=20;c++){
   const chapter={name:`Chapter ${c}`,lessons:[]};
   for(let q=1;q<=5;q++){
+    let codeSnippet="", codeType="html";
+    if(c<=5){ // HTML
+      if(q===1) codeSnippet="<h1>Hello World!</h1>";
+      else if(q===2) codeSnippet="<p>This is a paragraph</p>";
+      else if(q===3) codeSnippet="<ul>\n  <li>Item 1</li>\n  <li>Item 2</li>\n</ul>";
+      else if(q===4) codeSnippet="<a href='#'>Click Me</a>";
+      else codeSnippet="<img src='https://via.placeholder.com/100' alt='Image'>";
+      codeType="html";
+    } else if(c<=10){ // CSS
+      if(q===1) codeSnippet="body { background-color: lightblue; }";
+      else if(q===2) codeSnippet="p { color: red; font-size: 18px; }";
+      else if(q===3) codeSnippet="ul li { list-style-type: square; }";
+      else if(q===4) codeSnippet="a { text-decoration: none; color: green; }";
+      else codeSnippet="img { border-radius: 10px; }";
+      codeType="css";
+    } else if(c<=15){ // JS
+      if(q===1) codeSnippet="function greet(){ console.log('Hello'); }";
+      else if(q===2) codeSnippet="let x = 5; let y = 10; console.log(x + y);";
+      else if(q===3) codeSnippet="for(let i=0;i<5;i++){ console.log(i); }";
+      else if(q===4) codeSnippet="const arr = [1,2,3]; arr.forEach(n=>console.log(n));";
+      else codeSnippet="let obj = {name:'Alice', age:14}; console.log(obj.name);";
+      codeType="js";
+    } else { // Advanced JS / DOM
+      if(q===1) codeSnippet="document.body.style.backgroundColor='yellow';";
+      else if(q===2) codeSnippet="let btn = document.createElement('button'); btn.innerText='Click'; document.body.appendChild(btn);";
+      else if(q===3) codeSnippet="btn.addEventListener('click',()=>alert('Hello!'));";
+      else if(q===4) codeSnippet="const div=document.createElement('div'); div.id='box'; document.body.appendChild(div);";
+      else codeSnippet="document.getElementById('box').style.width='100px';";
+      codeType="js";
+    }
+
+    const mediaSnippet=`<div class="code-box code-${codeType}">${escapeHTML(codeSnippet)}</div>`;
     chapter.lessons.push({
       level:c<=10?"Beginner":c<=15?"Intermediate":"Advanced",
       text:`Lesson ${q} of ${chapter.name}`,
-      code:`// Example code for ${chapter.name} lesson ${q}`,
-      type:"js",
-      xp:5+c,
-      media:`<div class="code-box code-js">// Code example for ${chapter.name} lesson ${q}</div>`,
+      code: codeSnippet,
+      type: codeType,
+      xp: 5+c,
+      media: mediaSnippet,
       quiz:{
-        question:`Question ${q} of ${chapter.name}`,
+        question:`What does this code do in ${chapter.name} Lesson ${q}?`,
         options:[
-          `Option A for ${chapter.name} Q${q}`,
-          `Option B for ${chapter.name} Q${q}`,
-          `Option C for ${chapter.name} Q${q}`,
-          `Option D for ${chapter.name} Q${q}`,
-          `Option E for ${chapter.name} Q${q}`
+          `Does nothing`,
+          `Displays content on screen`,
+          `Changes background/style`,
+          `Logs to console`,
+          `Other`
         ],
-        answer:Math.floor(Math.random()*5),
-        explanation:`Correct answer is Option ${String.fromCharCode(65+Math.floor(Math.random()*5))}`
+        answer:c<=5||c>10?q===3?2:q===4?3:1:q===1?2:q===2?3:q===3?4:1,
+        explanation:`This code ${c<=5?"displays content on screen":c<=10?"changes style/CSS":q<=15?"logs to console or manipulates variables/arrays":"manipulates DOM or styles"}`
       },
       challenge:{
-        description:`Write a function that logs "${chapter.name} L${q}"`,
-        test:`console.log("${chapter.name} L${q}")`
+        description:`Write a code snippet similar to the example in ${chapter.name} Lesson ${q}`,
+        test: codeSnippet
       }
     });
   }
   chapters.push(chapter);
 }
+
+// Flatten lessons
 let lessons=[];
 chapters.forEach(c=>c.lessons.forEach(l=>lessons.push(l)));
 
 // ------------------------
-// State + DOM
+// State
 // ------------------------
-let i=parseInt(localStorage.getItem("lessonIndex"))||0;
-let totalXP=parseInt(localStorage.getItem("totalXP"))||0;
-let totalCorrect=parseInt(localStorage.getItem("totalCorrect"))||0;
-let badges=[];
-let streak=parseInt(localStorage.getItem("streak"))||0;
-let lastVisit=localStorage.getItem("lastVisit");
+let i=0, xp=0, level=1, streak=0, badges=[];
 
+// ------------------------
+// DOM Elements
+// ------------------------
 const lessonDiv=document.getElementById("lesson");
-const levelDiv=document.getElementById("level");
-const chapterNameDiv=document.getElementById("chapter-name");
-const progressDiv=document.getElementById("progress");
+const mediaContainer=document.getElementById("media");
 const xpFill=document.getElementById("xp-fill");
 const levelFill=document.getElementById("level-fill");
-const mediaContainer=document.getElementById("media-container");
-const quizContainer=document.getElementById("quiz-container");
+const badgeList=document.getElementById("badge-list");
 const quizQuestion=document.getElementById("quiz-question");
 const quizOptions=document.getElementById("quiz-options");
-const quizFeedback=document.getElementById("quiz-feedback");
-const submitAnswerBtn=document.getElementById("submit-answer");
-const codeInput=document.getElementById("code-input");
-const codeOutput=document.getElementById("code-output");
+const liveEditor=document.getElementById("live-editor");
 const challengeInput=document.getElementById("challenge-input");
-const challengeFeedback=document.getElementById("challenge-feedback");
-const badgeList=document.getElementById("badge-list");
+const codeOutput=document.getElementById("code-output");
+const progressText=document.getElementById("progress");
 const certificate=document.getElementById("certificate");
-const finalXP=document.getElementById("final-xp");
-const finalBadges=document.getElementById("final-badges");
-const finalStreak=document.getElementById("final-streak");
-const streakCount=document.getElementById("streak-count");
-const summaryXP=document.getElementById("summary-xp");
-const summaryCorrect=document.getElementById("summary-correct");
-const summaryBadges=document.getElementById("summary-badges");
-const summaryStreak=document.getElementById("summary-streak");
-
-let selectedAnswer=null;
-
-// ------------------------
-// Update Daily Streak
-// ------------------------
-function updateStreak(){
-  const today=new Date().toDateString();
-  if(lastVisit!==today){
-    if(lastVisit && (new Date(today)-new Date(lastVisit))/86400000===1){ streak++; }
-    else if(!lastVisit || (new Date(today)-new Date(lastVisit))/86400000>1){ streak=1; }
-    lastVisit=today;
-    localStorage.setItem("lastVisit",lastVisit);
-    localStorage.setItem("streak",streak);
-  }
-  streakCount.innerText=`${streak} days`;
-}
 
 // ------------------------
 // Show Lesson
 // ------------------------
 function showLesson(){
-  updateStreak();
-  if(i>=lessons.length){
-    certificate.style.display="block";
-    lessonDiv.style.display="none";
-    mediaContainer.style.display="none";
-    quizContainer.style.display="none";
-    document.getElementById("challenge-container").style.display="none";
-    chapterNameDiv.style.display="none";
-    finalXP.innerText=`Total XP: ${totalXP}, Quizzes Correct: ${totalCorrect}/${lessons.length}`;
-    finalBadges.innerText=`Badges: ${badges.join(", ")}`;
-    finalStreak.innerText=`Streak: ${streak} days`;
-    return;
-  }else{
-    certificate.style.display="none";
-    lessonDiv.style.display="block";
-    chapterNameDiv.style.display="block";
-  }
   const lesson=lessons[i];
-  const chapterNum=Math.floor(i/5)+1;
-  const lessonNum=(i%5)+1;
-  chapterNameDiv.innerText=`Chapter ${chapterNum}, Lesson ${lessonNum}`;
-  levelDiv.innerText=lesson.level;
-  lessonDiv.innerHTML=`<p>${lesson.text}</p><div class="code-box code-${lesson.type}">${lesson.code}</div>`;
-  progressDiv.innerText=`Lesson ${i+1} of ${lessons.length}`;
+  lessonDiv.innerHTML=`<p>${lesson.text} - Level: ${lesson.level}</p>`;
   mediaContainer.innerHTML=lesson.media;
-  mediaContainer.style.display=lesson.media?"block":"none";
-
-  xpFill.style.width=Math.min((totalXP/500)*100,100)+"%";
-  levelFill.style.width=lesson.level==="Beginner"?33:lesson.level==="Intermediate"?66:100+"%";
-
-  codeInput.value="";
-  codeOutput.srcdoc="";
-
-  challengeInput.value="";
-  challengeFeedback.innerText="";
-
-  startQuiz();
-  localStorage.setItem("lessonIndex",i);
-  localStorage.setItem("totalXP",totalXP);
-  localStorage.setItem("totalCorrect",totalCorrect);
-  localStorage.setItem("badges",JSON.stringify(badges));
+  progressText.innerText=`Lesson ${i+1} of ${lessons.length}`;
+  updateXP();
+  showQuiz();
 }
 
 // ------------------------
-// Run Live Code
+// Next / Prev
 // ------------------------
-function runCode(){codeOutput.srcdoc=codeInput.value;}
+function nextLesson(){ i++; if(i>=lessons.length)i=0; showLesson(); }
+function prevLesson(){ i--; if(i<0)i=lessons.length-1; showLesson(); }
 
 // ------------------------
-// Quiz Logic
+// XP / Level
 // ------------------------
-function startQuiz(){
+function updateXP(){
+  xpFill.style.width = `${(xp/100)*100}%`;
+  levelFill.style.width = `${(level/20)*100}%`;
+}
+
+// ------------------------
+// Quiz
+// ------------------------
+function showQuiz(){
   const lesson=lessons[i];
-  if(!lesson.quiz){quizContainer.style.display="none";return;}
-  quizContainer.style.display="block";
   quizQuestion.innerText=lesson.quiz.question;
-  quizFeedback.innerText="";
   quizOptions.innerHTML="";
-  lesson.quiz.options.forEach((opt,index)=>{
+  lesson.quiz.options.forEach((opt, idx)=>{
     const btn=document.createElement("button");
     btn.innerText=opt;
-    btn.onclick=()=>selectedAnswer=index;
+    btn.onclick=()=>submitAnswer(idx);
     quizOptions.appendChild(btn);
   });
 }
-submitAnswerBtn.onclick=function(){
+
+function submitAnswer(idx){
   const lesson=lessons[i];
-  if(selectedAnswer===lesson.quiz.answer){
-    quizFeedback.innerText=`✅ Correct! ${lesson.quiz.explanation}`;
-    totalXP+=5;
-    totalCorrect++;
-  }else{
-    quizFeedback.innerText=`❌ Wrong! ${lesson.quiz.explanation}`;
+  if(idx===lesson.quiz.answer){
+    alert("Correct! ✅\n"+lesson.quiz.explanation);
+    xp+=lesson.xp;
+  } else{
+    alert("Wrong ❌\n"+lesson.quiz.explanation);
   }
-  selectedAnswer=null;
-  if((i+1)%5===0 && !badges.includes(`Chapter ${(Math.floor(i/5)+1)} Complete`)){
-    badges.push(`Chapter ${(Math.floor(i/5)+1)} Complete`);
-    updateBadges();
-  }
-  showLesson();
+  streak++;
+  badges.push(`Badge ${streak}`);
+  updateXP();
+  renderBadges();
 }
 
 // ------------------------
-// Mini Coding Challenge
+// Badges
 // ------------------------
-function runChallenge(){
-  const lesson=lessons[i];
-  try{
-    const userCode=challengeInput.value;
-    const expected=lesson.challenge.test;
-    if(userCode.includes(expected)){
-      challengeFeedback.innerText="✅ Challenge Passed!";
-      totalXP+=10;
-    }else{
-      challengeFeedback.innerText=`❌ Challenge Failed! Expected code snippet: ${expected}`;
-    }
-  }catch(e){challengeFeedback.innerText="❌ Error running code";}
-  showLesson();
-}
-
-// ------------------------
-// Update Badges
-// ------------------------
-function updateBadges(){
+function renderBadges(){
   badgeList.innerHTML="";
-  badges.forEach(b=>{
-    const div=document.createElement("div");
-    div.className="badge";
-    div.innerText=b;
-    badgeList.appendChild(div);
-  });
+  badges.forEach(b=>{const d=document.createElement("div");d.className="badge";d.innerText=b;badgeList.appendChild(d);});
 }
 
 // ------------------------
-// Navigation
+// Live editor / challenge
 // ------------------------
-function nextLesson(){i++;showLesson();}
-function prevLesson(){i--;if(i<0)i=0;showLesson();}
-function resetProgress(){i=0;totalXP=0;totalCorrect=0;badges=[];streak=0;localStorage.clear();updateBadges();showLesson();}
-
-// ------------------------
-// Show Progress Summary
-// ------------------------
-function showSummary(){
-  summaryXP.innerText=`XP: ${totalXP}`;
-  summaryCorrect.innerText=`Correct Quizzes: ${totalCorrect}/${lessons.length}`;
-  summaryBadges.innerText=`Badges: ${badges.join(", ")}`;
-  summaryStreak.innerText=`Streak: ${streak} days`;
+function runChallenge() {
+  const lesson = lessons[i];
+  const code = challengeInput.value;
+  codeOutput.innerHTML = "";
+  if(lesson.type==="html") codeOutput.innerHTML = code;
+  else if(lesson.type==="css"){
+    const style = document.createElement("style");
+    style.innerHTML = code;
+    codeOutput.appendChild(style);
+    codeOutput.innerHTML += "<p>Preview paragraph</p><ul><li>Item 1</li><li>Item 2</li></ul><a href='#'>Link Example</a>";
+  } else if(lesson.type==="js"){
+    try {
+      let consoleOutput="";
+      const originalLog=console.log;
+      console.log=function(...args){consoleOutput+=args.join(" ")+"\n"; originalLog.apply(console,args);}
+      eval(code);
+      codeOutput.innerText = consoleOutput || "JS ran successfully!";
+      console.log = originalLog;
+    } catch(err){ codeOutput.innerText = "Error: "+err; }
+  }
 }
 
 // ------------------------
 // Init
 // ------------------------
-updateBadges();
 showLesson();

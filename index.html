@@ -1,76 +1,44 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>CodeLearn Ultimate</title>
-  <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CodeLearn Academy</title>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-  <h1>CodeLearn Ultimate</h1>
-  <a href="#">Join Discord</a>
+<h1>CodeLearn Academy</h1>
+<a href="https://discord.gg/YOURDISCORD" target="_blank">Join our Discord</a>
 
-  <h3 id="level"></h3>
-  <h4 id="chapter-name"></h4>
+<div id="progress" class="card">Lesson 1 of 100</div>
 
-  <div id="lesson" class="card"></div>
-  <div id="media-container" class="card"></div>
+<div class="card" id="lesson"></div>
+<div id="media"></div>
 
-  <div id="progress"></div>
-  <div id="xp-bar"><div id="xp-fill"></div></div>
-  <div id="level-bar"><div id="level-fill"></div></div>
+<div id="navigation" class="card">
+  <button onclick="prevLesson()">⬅️ Prev</button>
+  <button onclick="nextLesson()">Next ➡️</button>
+</div>
 
-  <div id="live-editor" class="card">
-    <h4>Try it yourself:</h4>
-    <textarea id="code-input" placeholder="Type HTML/CSS/JS here..."></textarea>
-    <button onclick="runCode()">Run Code</button>
-    <iframe id="code-output"></iframe>
-  </div>
+<div id="xp-bar"><div id="xp-fill"></div></div>
+<div id="level-bar"><div id="level-fill"></div></div>
 
-  <div id="quiz-container" class="card" style="display:none;">
-    <p id="quiz-question"></p>
-    <div id="quiz-options"></div>
-    <button id="submit-answer">Submit Answer</button>
-    <p id="quiz-feedback"></p>
-  </div>
+<div id="badge-list"></div>
 
-  <div id="challenge-container" class="card" style="display:none;">
-    <h4>Mini Coding Challenge:</h4>
-    <textarea id="challenge-input" placeholder="Write your code here..."></textarea>
-    <button onclick="runChallenge()">Check Challenge</button>
-    <p id="challenge-feedback"></p>
-  </div>
+<div class="card" id="quiz">
+  <div id="quiz-question"></div>
+  <div id="quiz-options"></div>
+</div>
 
-  <div id="badges" class="card">
-    <h4>Badges Earned:</h4>
-    <div id="badge-list"></div>
-  </div>
+<div id="live-editor" class="card">
+  <textarea id="challenge-input" placeholder="Type your code here..."></textarea>
+  <button onclick="runChallenge()">Run</button>
+  <div id="code-output"></div>
+</div>
 
-  <div id="streak" class="card">
-    <h4>Daily Streak:</h4>
-    <p id="streak-count">0 days</p>
-  </div>
+<div id="certificate" class="card"></div>
 
-  <div id="progress-summary" class="card">
-    <h4>Progress Summary:</h4>
-    <p id="summary-xp"></p>
-    <p id="summary-correct"></p>
-    <p id="summary-badges"></p>
-    <p id="summary-streak"></p>
-  </div>
-
-  <div id="certificate" class="card" style="display:none;">
-    <h2>🎉 Certificate of Completion 🎉</h2>
-    <p>Congratulations! You completed all lessons.</p>
-    <p id="final-xp"></p>
-    <p id="final-badges"></p>
-    <p id="final-streak"></p>
-  </div>
-
-  <button onclick="prevLesson()">← Prev</button>
-  <button onclick="nextLesson()">Next →</button>
-  <button onclick="resetProgress()">🔄 Reset Progress</button>
-  <button onclick="showSummary()">📊 Show Summary</button>
-
-  <script src="script.js"></script>
+<script src="script.js"></script>
 </body>
 </html>
