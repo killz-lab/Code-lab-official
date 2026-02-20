@@ -1,44 +1,258 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CodeLearn Academy</title>
-<link rel="stylesheet" href="style.css">
+<title>Code Academy Dashboard</title>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+import { getDatabase, ref, set, get, child, onValue, query, orderByChild, limitToLast } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+
+// Firebase config
+const firebaseConfig = {
+  apiKey: "AIzaSyCey1iYIcBvcd5qXOmDDbvJm5olf--sTw8",
+  authDomain: "code-lab-official.firebaseapp.com",
+  databaseURL: "https://code-lab-official-default-rtdb.firebaseio.com",
+  projectId: "code-lab-official",
+  storageBucket: "code-lab-official.firebasestorage.app",
+  messagingSenderId: "658764557761",
+  appId: "1:658764557761:web:b18df5a02f4ec87f22d340",
+  measurementId: "G-0YNRG5VXB0"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const database = getDatabase(app);
+
+// DOM elements
+const loginDiv = document.getElementById("login");
+const dashboardDiv = document.getElementById("dashboard");
+const userSpan = document.getElementById("user");
+const xpSpan = document.getElementById("xp");
+const xpFill = document.getElementById("xp-fill");
+const badgesDiv = document.getElementById("badges");
+const leaderboardDiv = document.getElementById("leaderboard");
+const chaptersDiv = document.getElementById("chapters");
+const editor = document.getElementById("editor");
+const output = document.getElementById("output");
+const runBtn = document.getElementById("runBtn");
+
+// Lessons
+let lessons=[];
+for(let c=1;c<=20;c++){
+  lessons.push({
+    chapter:"Chapter "+c,
+    title:"Lesson "+c,
+    desc:"Content for lesson "+c,
+    code:`<h1>Lesson ${c} code</h1>`,
+    question:"What does HTML do?",
+    answers:["Style","Structure","Logic"],
+    correct:1
+  });
+}
+
+let currentLesson=0;
+let xp=0;
+
+// Auth listener
+onAuthStateChanged(auth,user=>{
+  if(user){
+    userSpan.innerText=user.email;
+    loginDiv.style.display="none";
+    dashboardDiv.style.display="block";
+    loadProgress();
+  } else{
+    loginDiv.style.display="block";
+    dashboardDiv.style.display="none";
+  }
+});
+
+// Register/Login
+window.registerUser=function(){
+  const email=document.getElementById("email").value;
+  const pw=document.getElementById("password").value;
+  createUserWithEmailAndPassword(auth,email,pw).then(()=>alert("Registered!")).catch(e=>alert(e.message));
+};
+window.loginUser=function(){
+  const email=document.getElementById("email").value;
+  const pw=document.getElementById("password").value;
+  signInWithEmailAndPassword(auth,email,pw).catch(e=>alert(e.message));
+};
+
+// Load/save progress
+async function loadProgress(){
+  const uid=auth.currentUser.uid;
+  const snapshot=await get(ref(database,'users/'+uid));
+  if(snapshot.exists()){xp=snapshot.val().xp||0;}
+  updateXP();
+  renderChapters();
+  updateBadges();
+  updateLeaderboard();
+}
+
+// Save XP
+function saveProgress(){
+  const uid=auth.currentUser.uid;
+  set(ref(database,'users/'+uid),{xp});
+  updateLeaderboard();
+}
+
+// Chapters with progress bars and lock icons
+function renderChapters(){
+  let html="";
+  lessons.forEach((l,i)=>{
+    let unlocked = i===0 || xp>=i*10;
+    let progressPercent = Math.min((xp-(i*10))*10,100);
+    if(progressPercent<0) progressPercent=0;
+    html+=`<div class="card">
+      <h4>${l.chapter} - ${l.title} ${unlocked?"✅":"🔒"}</h4>
+      <p>${l.desc}</p>
+      <div class="chapter-progress"><div style="width:${progressPercent}%;"></div></div>
+      <button onclick="startLesson(${i})" ${unlocked?"":"disabled"}>${unlocked?"Start":"Locked"}</button>
+    </div>`;
+  });
+  chaptersDiv.innerHTML=html;
+}
+
+// Start lesson
+window.startLesson=function(i){
+  currentLesson=i;
+  const l=lessons[i];
+  document.getElementById("lesson-title").innerText=l.title;
+  document.getElementById("lesson-desc").innerText=l.desc;
+  document.getElementById("code-box").innerText=l.code;
+  document.getElementById("quiz-question").innerText=l.question;
+  let html="";
+  l.answers.forEach((a,idx)=>html+=`<button onclick="checkAnswer(${idx})">${a}</button>`);
+  document.getElementById("quiz-answers").innerHTML=html;
+  editor.value=l.code;
+};
+
+// Check answer
+window.checkAnswer=function(i){
+  const l=lessons[currentLesson];
+  if(i===l.correct){alert("Correct ✅"); xp+=10;}
+  else alert("Wrong ❌ Correct: "+l.answers[l.correct]);
+  updateXP(); saveProgress(); renderChapters(); updateBadges();
+};
+
+// Run editor
+runBtn.onclick=function(){output.srcdoc=editor.value;};
+
+// Dark/light
+window.toggleDark=function(){document.body.classList.toggle("dark");};
+
+// XP & badges
+function updateXP(){xpSpan.innerText=xp; xpFill.style.width=(xp%100)+"%";}
+function updateBadges(){
+  let b="";
+  if(xp>=50)b+="<div class='badge'>Beginner</div>";
+  if(xp>=150)b+="<div class='badge'>Intermediate</div>";
+  if(xp>=300)b+="<div class='badge'>Pro</div>";
+  badgesDiv.innerHTML=b;
+}
+
+// Leaderboard
+function updateLeaderboard(){
+  const q=query(ref(database,'users'),orderByChild('xp'),limitToLast(10));
+  onValue(q,s=>{
+    let html="";
+    s.forEach(c=>html+=`<p>${c.key} - ${c.val().xp} XP</p>`);
+    leaderboardDiv.innerHTML=html;
+  });
+}
+
+// Certificate
+window.generateCertificate=function(){
+  const { jsPDF }=window.jspdf;
+  const doc=new jsPDF();
+  doc.setFontSize(20);
+  doc.text("🎉 Code Academy Certificate 🎉",20,30);
+  doc.setFontSize(14);
+  doc.text("Student: "+auth.currentUser.email,20,50);
+  doc.text("XP: "+xp,20,60);
+  doc.text("Date: "+new Date().toLocaleDateString(),20,70);
+  doc.save("certificate.pdf");
+};
+
+// Screen size
+window.setScreenSize=function(type){
+  if(type==="mobile"){document.body.style.width="360px";document.body.style.margin="0 auto";}
+  else if(type==="desktop"){document.body.style.width="100%";document.body.style.margin="0";}
+};
+</script>
+
+<style>
+body{font-family:Arial;margin:0;padding:10px;background:#f5f5f5;color:#333;transition:.3s;}
+.dark{background:#121212;color:#eee;}
+h1,h2,h3{text-align:center;}
+.card{background:#fff;padding:10px;margin:10px 0;border-radius:12px;}
+.dark .card{background:#1e1e1e;}
+button{width:100%;padding:10px;margin:5px 0;border:none;border-radius:8px;background:#1e90ff;color:#fff;cursor:pointer;}
+button:hover{opacity:.85;}
+.code-box{background:#272822;color:#f8f8f2;padding:10px;border-radius:8px;white-space:pre;overflow:auto;}
+#xp-bar{background:#ddd;height:20px;border-radius:10px;overflow:hidden;}
+#xp-fill{background:#1e90ff;height:100%;width:0%;}
+.badge{background:gold;padding:5px;border-radius:8px;margin:3px;display:inline-block;}
+textarea{width:100%;height:100px;margin-bottom:5px;border-radius:8px;border:1px solid #ccc;padding:5px;}
+iframe{width:100%;height:150px;border:1px solid #ccc;border-radius:8px;margin-top:5px;}
+.chapter-progress{background:#ddd;height:10px;border-radius:5px;overflow:hidden;margin-bottom:5px;}
+.chapter-progress div{background:#1e90ff;height:100%;width:0%;}
+@media(max-width:600px){textarea{height:80px;}iframe{height:120px;}}
+</style>
+
 </head>
 <body>
 
-<h1>CodeLearn Academy</h1>
-<a href="https://discord.gg/YOURDISCORD" target="_blank">Join our Discord</a>
+<h1>🚀 Code Academy Dashboard</h1>
 
-<div id="progress" class="card">Lesson 1 of 100</div>
-
-<div class="card" id="lesson"></div>
-<div id="media"></div>
-
-<div id="navigation" class="card">
-  <button onclick="prevLesson()">⬅️ Prev</button>
-  <button onclick="nextLesson()">Next ➡️</button>
+<div id="login" class="card">
+<h3>Login / Register</h3>
+<input id="email" type="email" placeholder="Email">
+<input id="password" type="password" placeholder="Password">
+<button onclick="registerUser()">Register</button>
+<button onclick="loginUser()">Login</button>
 </div>
 
+<div id="dashboard" style="display:none;">
+<button onclick="toggleDark()">🌙 Dark / Light</button>
+<button onclick="setScreenSize('mobile')">📱 Mobile View</button>
+<button onclick="setScreenSize('desktop')">💻 Desktop View</button>
+
+<h3>User: <span id="user"></span></h3>
+<h3>XP: <span id="xp">0</span></h3>
 <div id="xp-bar"><div id="xp-fill"></div></div>
-<div id="level-bar"><div id="level-fill"></div></div>
 
-<div id="badge-list"></div>
+<div class="card" id="badges"><h3>Badges</h3></div>
+<div class="card" id="chapters"><h3>Chapters</h3></div>
+<div class="card" id="leaderboard"><h3>Leaderboard</h3></div>
 
-<div class="card" id="quiz">
-  <div id="quiz-question"></div>
-  <div id="quiz-options"></div>
+<div class="card">
+<h3 id="lesson-title">Lesson</h3>
+<p id="lesson-desc"></p>
+<div class="code-box" id="code-box"></div>
 </div>
 
-<div id="live-editor" class="card">
-  <textarea id="challenge-input" placeholder="Type your code here..."></textarea>
-  <button onclick="runChallenge()">Run</button>
-  <div id="code-output"></div>
+<div class="card">
+<h3>Quiz</h3>
+<p id="quiz-question"></p>
+<div id="quiz-answers"></div>
 </div>
 
-<div id="certificate" class="card"></div>
+<div class="card">
+<h3>Live Editor</h3>
+<textarea id="editor"></textarea>
+<button id="runBtn">Run</button>
+<iframe id="output"></iframe>
+</div>
 
-<script src="script.js"></script>
+<div class="card">
+<button onclick="generateCertificate()">🎓 Generate Certificate</button>
+</div>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </body>
 </html>
