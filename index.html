@@ -2,12 +2,70 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Code Academy Dashboard</title>
+<title>Code Academy Full 20 Chapters</title>
+<style>
+body{font-family:Arial,sans-serif;margin:0;padding:10px;background:#f5f5f5;color:#333;transition:background 0.3s,color 0.3s;}
+body.dark{background:#222;color:#eee;}
+h1,h2,h3,h4{text-align:center;}
+.card{background:#fff;padding:15px;margin:10px 0;border-radius:12px;box-shadow:0 3px 6px rgba(0,0,0,0.1);transition:background 0.3s,color 0.3s;}
+body.dark .card{background:#333;color:#eee;}
+button{width:100%;padding:10px;margin:5px 0;background:#1e90ff;color:#fff;border:none;border-radius:8px;cursor:pointer;transition:opacity 0.3s;}
+button:hover{opacity:0.85;}
+#xp-bar,#level-bar{background:#ddd;border-radius:10px;height:20px;margin:5px 0;overflow:hidden;}
+#xp-fill{background:#1e90ff;height:100%;width:0%;transition:width 0.3s;}
+#badge-list{display:flex;flex-wrap:wrap;gap:5px;}
+.badge{background:#ffd700;color:#000;padding:5px 8px;border-radius:8px;font-weight:bold;}
+textarea{width:100%;height:100px;margin-bottom:5px;border-radius:8px;border:1px solid #ccc;padding:5px;}
+iframe{width:100%;height:150px;border:1px solid #ccc;border-radius:8px;margin-top:5px;}
+#controls{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px;}
+#controls button{flex:1;}
+@media(max-width:600px){body{padding:5px}textarea{height:80px;font-size:13px}iframe{height:120px}}
+</style>
+</head>
+<body>
+
+<div id="login" class="card">
+  <input id="email" placeholder="Email"><br>
+  <input id="password" type="password" placeholder="Password"><br>
+  <button onclick="registerUser()">Register</button>
+  <button onclick="loginUser()">Login</button>
+</div>
+
+<div id="dashboard" style="display:none;">
+  <h3>User: <span id="user"></span></h3>
+  <h3>XP: <span id="xp">0</span></h3>
+  <div id="xp-bar"><div id="xp-fill"></div></div>
+  <div id="badges"></div>
+
+  <div id="controls">
+    <button onclick="toggleDarkLight()">Dark/Light Mode</button>
+    <button onclick="setScreen('mobile')">Mobile Screen</button>
+    <button onclick="setScreen('pc')">PC Screen</button>
+  </div>
+
+  <div id="chapters"></div>
+
+  <div id="lesson-section" class="card">
+    <h3 id="lesson-title"></h3>
+    <div id="code-box" class="code-box"></div>
+
+    <h4>Quiz</h4>
+    <p id="quiz-question"></p>
+    <div id="quiz-answers"></div>
+    <button onclick="prevQuestion()">Prev</button>
+    <button onclick="nextQuestion()">Next</button>
+
+    <h4>Editor</h4>
+    <textarea id="editor"></textarea>
+    <button onclick="runCode()">Run</button>
+    <iframe id="output"></iframe>
+  </div>
+</div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
-import { getDatabase, ref, set, get, child, onValue, query, orderByChild, limitToLast } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+import { getDatabase, ref, set, get } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
 // Firebase config
 const firebaseConfig = {
@@ -17,242 +75,145 @@ const firebaseConfig = {
   projectId: "code-lab-official",
   storageBucket: "code-lab-official.firebasestorage.app",
   messagingSenderId: "658764557761",
-  appId: "1:658764557761:web:b18df5a02f4ec87f22d340",
-  measurementId: "G-0YNRG5VXB0"
+  appId: "1:658764557761:web:b18df5a02f4ec87f22d340"
 };
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const database = getDatabase(app);
 
-// DOM elements
+// DOM
 const loginDiv = document.getElementById("login");
 const dashboardDiv = document.getElementById("dashboard");
 const userSpan = document.getElementById("user");
 const xpSpan = document.getElementById("xp");
 const xpFill = document.getElementById("xp-fill");
 const badgesDiv = document.getElementById("badges");
-const leaderboardDiv = document.getElementById("leaderboard");
 const chaptersDiv = document.getElementById("chapters");
+const lessonSection = document.getElementById("lesson-section");
+const lessonTitle = document.getElementById("lesson-title");
+const codeBox = document.getElementById("code-box");
+const quizQuestion = document.getElementById("quiz-question");
+const quizAnswers = document.getElementById("quiz-answers");
 const editor = document.getElementById("editor");
 const output = document.getElementById("output");
-const runBtn = document.getElementById("runBtn");
 
-// Lessons
-let lessons=[];
-for(let c=1;c<=20;c++){
+let lessons = [], currentLesson=0, currentQuestion=0, xp=0;
+
+// ===== Sample Questions =====
+// Chapters 1–20, 5 questions per chapter (HTML/CSS/JS combined)
+for(let i=1;i<=20;i++){
+  let chapterQuestions=[];
+  for(let j=1;j<=5;j++){
+    chapterQuestions.push({
+      question:`Chapter ${i} - Question ${j}: What does this code do?`,
+      answers:["Option A","Option B","Option C","Option D"],
+      correct:0,
+      explanation:`Chapter ${i} Question ${j} explanation`
+    });
+  }
   lessons.push({
-    chapter:"Chapter "+c,
-    title:"Lesson "+c,
-    desc:"Content for lesson "+c,
-    code:`<h1>Lesson ${c} code</h1>`,
-    question:"What does HTML do?",
-    answers:["Style","Structure","Logic"],
-    correct:1
+    chapter:`Chapter ${i}`,
+    title:`Lesson ${i}`,
+    code:`<h2>Lesson ${i} Code Example</h2>\n<p>Try editing this!</p>`,
+    questions:chapterQuestions
   });
 }
 
-let currentLesson=0;
-let xp=0;
-
-// Auth listener
+// ===== Auth =====
 onAuthStateChanged(auth,user=>{
   if(user){
     userSpan.innerText=user.email;
     loginDiv.style.display="none";
     dashboardDiv.style.display="block";
     loadProgress();
-  } else{
+  } else {
     loginDiv.style.display="block";
     dashboardDiv.style.display="none";
   }
 });
 
-// Register/Login
-window.registerUser=function(){
-  const email=document.getElementById("email").value;
-  const pw=document.getElementById("password").value;
-  createUserWithEmailAndPassword(auth,email,pw).then(()=>alert("Registered!")).catch(e=>alert(e.message));
-};
-window.loginUser=function(){
-  const email=document.getElementById("email").value;
-  const pw=document.getElementById("password").value;
-  signInWithEmailAndPassword(auth,email,pw).catch(e=>alert(e.message));
+window.registerUser = () => {
+  const emailInput = document.getElementById("email").value;
+  const passwordInput = document.getElementById("password").value;
+  createUserWithEmailAndPassword(auth,emailInput,passwordInput)
+    .then(u=>alert("Registered ✅ "+u.user.email))
+    .catch(e=>alert("Error ❌ "+e.message));
 };
 
-// Load/save progress
+window.loginUser = () => {
+  const emailInput = document.getElementById("email").value;
+  const passwordInput = document.getElementById("password").value;
+  signInWithEmailAndPassword(auth,emailInput,passwordInput)
+    .then(u=>alert("Logged in ✅ "+u.user.email))
+    .catch(e=>alert("Error ❌ "+e.message));
+};
+
+// ===== Progress =====
 async function loadProgress(){
-  const uid=auth.currentUser.uid;
-  const snapshot=await get(ref(database,'users/'+uid));
-  if(snapshot.exists()){xp=snapshot.val().xp||0;}
+  const snap=await get(ref(database,'users/'+auth.currentUser.uid));
+  if(snap.exists()) xp=snap.val().xp||0;
   updateXP();
   renderChapters();
   updateBadges();
-  updateLeaderboard();
+}
+function saveProgress(){ set(ref(database,'users/'+auth.currentUser.uid),{xp}); }
+function updateXP(){ xpSpan.innerText=xp; xpFill.style.width=(xp%100)+"%"; }
+function updateBadges(){
+  let html="";
+  if(xp>=50) html+='<div class="badge">Beginner</div>';
+  if(xp>=150) html+='<div class="badge">Intermediate</div>';
+  if(xp>=300) html+='<div class="badge">Pro</div>';
+  badgesDiv.innerHTML=html;
 }
 
-// Save XP
-function saveProgress(){
-  const uid=auth.currentUser.uid;
-  set(ref(database,'users/'+uid),{xp});
-  updateLeaderboard();
-}
-
-// Chapters with progress bars and lock icons
+// ===== Chapters =====
 function renderChapters(){
   let html="";
-  lessons.forEach((l,i)=>{
-    let unlocked = i===0 || xp>=i*10;
-    let progressPercent = Math.min((xp-(i*10))*10,100);
-    if(progressPercent<0) progressPercent=0;
-    html+=`<div class="card">
-      <h4>${l.chapter} - ${l.title} ${unlocked?"✅":"🔒"}</h4>
-      <p>${l.desc}</p>
-      <div class="chapter-progress"><div style="width:${progressPercent}%;"></div></div>
-      <button onclick="startLesson(${i})" ${unlocked?"":"disabled"}>${unlocked?"Start":"Locked"}</button>
-    </div>`;
-  });
+  lessons.forEach((l,i)=>html+=`<div class="card"><h4>${l.chapter}</h4><button onclick="startLesson(${i})">Start</button></div>`);
   chaptersDiv.innerHTML=html;
 }
 
-// Start lesson
+// ===== Lesson =====
 window.startLesson=function(i){
-  currentLesson=i;
-  const l=lessons[i];
-  document.getElementById("lesson-title").innerText=l.title;
-  document.getElementById("lesson-desc").innerText=l.desc;
-  document.getElementById("code-box").innerText=l.code;
-  document.getElementById("quiz-question").innerText=l.question;
+  currentLesson=i; currentQuestion=0;
+  lessonTitle.innerText=lessons[i].title;
+  codeBox.innerHTML=lessons[i].code;
+  editor.value=lessons[i].code;
+  loadQuestion();
+  lessonSection.scrollIntoView({behavior:"smooth"});
+}
+
+// ===== Quiz =====
+function loadQuestion(){
+  const q=lessons[currentLesson].questions[currentQuestion];
+  quizQuestion.innerText=q.question;
   let html="";
-  l.answers.forEach((a,idx)=>html+=`<button onclick="checkAnswer(${idx})">${a}</button>`);
-  document.getElementById("quiz-answers").innerHTML=html;
-  editor.value=l.code;
-};
-
-// Check answer
+  q.answers.forEach((a,i)=>html+=`<button onclick="checkAnswer(${i})">${a}</button>`);
+  quizAnswers.innerHTML=html;
+}
 window.checkAnswer=function(i){
-  const l=lessons[currentLesson];
-  if(i===l.correct){alert("Correct ✅"); xp+=10;}
-  else alert("Wrong ❌ Correct: "+l.answers[l.correct]);
-  updateXP(); saveProgress(); renderChapters(); updateBadges();
-};
-
-// Run editor
-runBtn.onclick=function(){output.srcdoc=editor.value;};
-
-// Dark/light
-window.toggleDark=function(){document.body.classList.toggle("dark");};
-
-// XP & badges
-function updateXP(){xpSpan.innerText=xp; xpFill.style.width=(xp%100)+"%";}
-function updateBadges(){
-  let b="";
-  if(xp>=50)b+="<div class='badge'>Beginner</div>";
-  if(xp>=150)b+="<div class='badge'>Intermediate</div>";
-  if(xp>=300)b+="<div class='badge'>Pro</div>";
-  badgesDiv.innerHTML=b;
+  const q=lessons[currentLesson].questions[currentQuestion];
+  alert(i===q.correct?`Correct ✅\n${q.explanation}`:`Wrong ❌\n${q.explanation}`);
+  xp+=10;
+  updateXP();
+  saveProgress();
 }
+window.nextQuestion=function(){if(currentQuestion<lessons[currentLesson].questions.length-1) currentQuestion++; loadQuestion();}
+window.prevQuestion=function(){if(currentQuestion>0) currentQuestion--; loadQuestion();}
 
-// Leaderboard
-function updateLeaderboard(){
-  const q=query(ref(database,'users'),orderByChild('xp'),limitToLast(10));
-  onValue(q,s=>{
-    let html="";
-    s.forEach(c=>html+=`<p>${c.key} - ${c.val().xp} XP</p>`);
-    leaderboardDiv.innerHTML=html;
-  });
+// ===== Editor =====
+window.runCode=function(){ output.srcdoc=editor.value; }
+
+// ===== Dark/Light Mode =====
+window.toggleDarkLight=function(){ document.body.classList.toggle("dark"); }
+
+// ===== Screen Size =====
+window.setScreen=function(mode){
+  if(mode==='mobile'){document.body.style.width='360px';document.body.style.margin='auto';}
+  else{document.body.style.width='100%';document.body.style.margin='0';}
 }
-
-// Certificate
-window.generateCertificate=function(){
-  const { jsPDF }=window.jspdf;
-  const doc=new jsPDF();
-  doc.setFontSize(20);
-  doc.text("🎉 Code Academy Certificate 🎉",20,30);
-  doc.setFontSize(14);
-  doc.text("Student: "+auth.currentUser.email,20,50);
-  doc.text("XP: "+xp,20,60);
-  doc.text("Date: "+new Date().toLocaleDateString(),20,70);
-  doc.save("certificate.pdf");
-};
-
-// Screen size
-window.setScreenSize=function(type){
-  if(type==="mobile"){document.body.style.width="360px";document.body.style.margin="0 auto";}
-  else if(type==="desktop"){document.body.style.width="100%";document.body.style.margin="0";}
-};
 </script>
 
-<style>
-body{font-family:Arial;margin:0;padding:10px;background:#f5f5f5;color:#333;transition:.3s;}
-.dark{background:#121212;color:#eee;}
-h1,h2,h3{text-align:center;}
-.card{background:#fff;padding:10px;margin:10px 0;border-radius:12px;}
-.dark .card{background:#1e1e1e;}
-button{width:100%;padding:10px;margin:5px 0;border:none;border-radius:8px;background:#1e90ff;color:#fff;cursor:pointer;}
-button:hover{opacity:.85;}
-.code-box{background:#272822;color:#f8f8f2;padding:10px;border-radius:8px;white-space:pre;overflow:auto;}
-#xp-bar{background:#ddd;height:20px;border-radius:10px;overflow:hidden;}
-#xp-fill{background:#1e90ff;height:100%;width:0%;}
-.badge{background:gold;padding:5px;border-radius:8px;margin:3px;display:inline-block;}
-textarea{width:100%;height:100px;margin-bottom:5px;border-radius:8px;border:1px solid #ccc;padding:5px;}
-iframe{width:100%;height:150px;border:1px solid #ccc;border-radius:8px;margin-top:5px;}
-.chapter-progress{background:#ddd;height:10px;border-radius:5px;overflow:hidden;margin-bottom:5px;}
-.chapter-progress div{background:#1e90ff;height:100%;width:0%;}
-@media(max-width:600px){textarea{height:80px;}iframe{height:120px;}}
-</style>
-
-</head>
-<body>
-
-<h1>🚀 Code Academy Dashboard</h1>
-
-<div id="login" class="card">
-<h3>Login / Register</h3>
-<input id="email" type="email" placeholder="Email">
-<input id="password" type="password" placeholder="Password">
-<button onclick="registerUser()">Register</button>
-<button onclick="loginUser()">Login</button>
-</div>
-
-<div id="dashboard" style="display:none;">
-<button onclick="toggleDark()">🌙 Dark / Light</button>
-<button onclick="setScreenSize('mobile')">📱 Mobile View</button>
-<button onclick="setScreenSize('desktop')">💻 Desktop View</button>
-
-<h3>User: <span id="user"></span></h3>
-<h3>XP: <span id="xp">0</span></h3>
-<div id="xp-bar"><div id="xp-fill"></div></div>
-
-<div class="card" id="badges"><h3>Badges</h3></div>
-<div class="card" id="chapters"><h3>Chapters</h3></div>
-<div class="card" id="leaderboard"><h3>Leaderboard</h3></div>
-
-<div class="card">
-<h3 id="lesson-title">Lesson</h3>
-<p id="lesson-desc"></p>
-<div class="code-box" id="code-box"></div>
-</div>
-
-<div class="card">
-<h3>Quiz</h3>
-<p id="quiz-question"></p>
-<div id="quiz-answers"></div>
-</div>
-
-<div class="card">
-<h3>Live Editor</h3>
-<textarea id="editor"></textarea>
-<button id="runBtn">Run</button>
-<iframe id="output"></iframe>
-</div>
-
-<div class="card">
-<button onclick="generateCertificate()">🎓 Generate Certificate</button>
-</div>
-
-</div>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </body>
 </html>
